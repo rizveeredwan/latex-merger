@@ -4,11 +4,8 @@ from subprocess import call
 
 
 class LatexMerger:
-    def __init__(self, remove_old_project_flag):
-        if remove_old_project_flag is True:
-            self.remove_old_project()
-        if os.path.exists('compiled-project') is False:
-            os.mkdir('compiled-project')
+    def __init__(self):
+        pass
 
     def pdf_to_eps(self, pdf_folder):
         self.remove_files(folder_name=os.path.join('compiled-project', 'eps'))
@@ -240,15 +237,4 @@ class LatexMerger:
             print(e)
 
 
-latex_merger = LatexMerger(remove_old_project_flag=False)
-# latex_merger.pdf_to_eps(pdf_folder=os.path.join('..', 'API-Overleaf', 'Figures', 'Pdf'))
-latex_merger.start_merge(overleaf_folder=os.path.join('..', 'API-Overleaf'),
-                         remove_old_project_flag=True,
-                         construct_eps_images=True,
-                         image_folder=os.path.join('Figures', 'Pdf'),
-                         style_files=['svglov3.clo', 'svjour3.cls', 'dirtytalk.sty'],
-                         main_tex_file='main_springer.tex',
-                         bibliography_style="abbrv.bst",
-                         bibliography_file="sn-bibliography.bib",
-                         section_folder_name='Sections',
-                         package_path='packages.tex')
+
