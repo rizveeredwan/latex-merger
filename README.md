@@ -5,7 +5,7 @@ A python library to compress and sort an overleaf latex project.
 Had to compile an overleaf project for a journal's article submission. But in overleaf when we
 make a project, we do things in much sorted way, creating separate folders for chapters/sections, figures, figures with pdf, separate file for latex packages, etc.
 
-But when we work for the submission of journal, we need to compress everything in one file pretty often. This process is also not a one time shot rather incrementally gets updated with our project update and we are again back to ground zero ! Recompile and Merge everything again.
+But when we work for the submission of journal, we need to compress everything into one file pretty often. This process is also not a one-time shot rather incrementally gets updated with our project update and we are again back to ground zero ! Recompile and Merge everything again.
 
 So, wrote a library to do this annoying repeating task !
 
@@ -54,6 +54,7 @@ latex_merger.start_merge(overleaf_folder=os.path.join('..', 'API-Overleaf'),
 
 ## Remember, Remember
 - If you see, that you did all things right but still the bibliography section is not generating (like myself), may be you **did not compile the project** using ``F9`` rather only tried to make pdf using ``pdf2latex`` in ``WinEdt`` through ``MikTex``.
+- Try to avoid spacing in file names (figures, folders, during import/include etc.), rather use different symbols (_,-, etc). It reduces redundant cases system wide, also might create issue while using this library.
 -
 ```commandline
 Sometimes, when we use \usepackage{graphics}, we add the following codes or graphicspaths,
