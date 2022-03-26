@@ -42,10 +42,11 @@ latex_merger.start_merge(overleaf_folder=os.path.join('..', 'API-Overleaf'),
 - image_folder: The folder name in overleaf project containing pdf images (can be ``None``)
 - style_files: A list of file names, e.g, style files to manually copy in the final ``compiled_project/merge`` folder
 - main_tex_file: The main latex file of your existing project where everything will be put
-- bibliography_style: The file name of your bibliography style
-- bibliography_file: The file name of your bibliography file (.bib)
+- bibliography_style: The file name of your bibliography style (can be ``None`)
+- bibliography_file: The file name of your bibliography file (.bib) (can be ``None`)
 - section_folder_name: The folder name under overleaf project where all of your sections/chapters are
 - package_path: The file name of your ``packages.tex``, where you have kept all the imports, e.g, `\usepackage` commands (can be ``None``)
+- bib_tex_file: If not ``None``, then ``.bib`` will replaced by ``.bbl`` file content in ``main_tex_file``
 
 ## Requirements
 - I tested using ``MikTex``, a tex distribution tool for windows

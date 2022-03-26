@@ -90,6 +90,7 @@ class LatexMerger:
             f.close()
 
     def change_the_image_paths(self, file_name=None):
+        found_image_maps = []
         try:
             print(file_name)
             with open(file_name, 'r', encoding='utf-8') as f:
@@ -102,6 +103,7 @@ class LatexMerger:
                         pdf_name = self.extract_file_name(temp)
                         eps_name = pdf_name.split('.pdf')[0] + '.eps'
                         if os.path.exists(os.path.join('compiled-project', 'eps', eps_name)) is True:
+                            found_image_maps.append(os.path.join('compiled-project', eps_name))
                             print("exists")
                             print(pdf_name, os.path.join('compiled-project', 'eps', eps_name))
                             new_path = self.update_with_new_path(old_path=lines[i], new_path=eps_name.split('.eps')[0])
@@ -114,20 +116,25 @@ class LatexMerger:
                 print("writing complete")
         except Exception as e:
             print(e)
+        return found_image_maps
 
     def read_file(self, file_name):
         with open(file_name, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         return lines
 
-    def update_bibliography_line(self, main_tex_file):
+    def update_bibliography_line(self, main_tex_file, bib_tex):
         lines = self.read_file(file_name=main_tex_file)
         for i in range(len(lines)-1, -1, -1):
             if '\\bibliography{' in lines[i]:
-                bib_file = self.extract_text_within_bracket(text=lines[i])
-                bib_file = bib_file + '.bib'
-                lines[i] = '\\bibliography{'+bib_file+'}'
-                break
+                lines[i] = '\n'
+            elif '\\bibliographystyle{' in lines[i]:
+                lines[i] = '\n'
+            elif '\\end{document}' in lines[i]:
+                lines[i] = "\n"
+        for i in range(0, len(bib_tex)):
+            lines.append(bib_tex[i])
+        lines.append('\\end{document}')
         self.write_into_file(file_name=main_tex_file, lines=lines)
 
     def compile_section_text(self, main_file, sections):
@@ -158,7 +165,8 @@ class LatexMerger:
                     bibliography_style="abbrv.bst",
                     bibliography_file="sn-bibliography.bib",
                     section_folder_name='Sections',
-                    package_path=None):
+                    package_path=None,
+                    bib_tex_file=None):
 
         # removing old project
         if remove_old_project_flag is True:
@@ -187,12 +195,13 @@ class LatexMerger:
         self.copy_file(source, destination)
 
         # copy the bibiliography
-        source = os.path.join(overleaf_folder, bibliography_style)
-        destination = os.path.join('.', 'compiled-project', 'merge', bibliography_style)
-        self.copy_file(source, destination)
-        source = os.path.join(overleaf_folder, bibliography_file)
-        destination = os.path.join('.', 'compiled-project', 'merge', bibliography_file)
-        self.copy_file(source, destination)
+        if bibliography_style is not None and bibliography_file is not None:
+            source = os.path.join(overleaf_folder, bibliography_style)
+            destination = os.path.join('.', 'compiled-project', 'merge', bibliography_style)
+            self.copy_file(source, destination)
+            source = os.path.join(overleaf_folder, bibliography_file)
+            destination = os.path.join('.', 'compiled-project', 'merge', bibliography_file)
+            self.copy_file(source, destination)
 
         # copy package path
         if package_path is not None:
@@ -210,8 +219,9 @@ class LatexMerger:
             self.copy_file(source, destination)
 
         # change the image path in files
+        found_image_maps = []
         for f in range(0, len(chapters)):
-            self.change_the_image_paths(file_name=chapters[f])
+            found_image_maps = found_image_maps + self.change_the_image_paths(file_name=chapters[f])
 
         # compile section files
         self.compile_section_text(main_file=os.path.join('.', 'compiled-project', main_tex_file), sections=chapters)
@@ -220,8 +230,15 @@ class LatexMerger:
         # image copying
         image_files = os.listdir(os.path.join('.', 'compiled-project', 'eps'))
         for im in image_files:
-            self.copy_file(source=os.path.join('.', 'compiled-project', 'eps', im),
-                           destination=os.path.join('.', 'compiled-project', 'merge'))
+            if os.path.join('compiled-project', im) in found_image_maps:
+                self.copy_file(source=os.path.join('.', 'compiled-project', 'eps', im),
+                               destination=os.path.join('.', 'compiled-project', 'merge'))
+
+        if bib_tex_file is not None:
+            # merging bibtex file
+            bib_content = self.read_file(file_name=os.path.join(overleaf_folder, bib_tex_file))
+            self.update_bibliography_line(os.path.join('.', 'compiled-project', main_tex_file), bib_tex=bib_content)
+
 
         # main latex
         self.copy_file(source=os.path.join('.', 'compiled-project', main_tex_file),
