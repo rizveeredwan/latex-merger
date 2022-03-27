@@ -56,19 +56,6 @@ latex_merger.start_merge(overleaf_folder=os.path.join('..', 'API-Overleaf'),
 ## Remember, Remember
 - If you see, that you did all things right but still the bibliography section is not generating (like myself), may be you **did not compile the project** using ``F9`` rather only tried to make pdf using ``pdf2latex`` in ``WinEdt`` through ``MikTex``.
 - Try to avoid spacing as much as possible (figures, folders, during import/include etc.), rather use different symbols (underscore, hyphen, etc). It reduces redundant cases system wide, also might create issue while using this library.
--
-```commandline
-Sometimes, when we use \usepackage{graphics}, we add the following codes or graphicspaths,
-
-% declare the path(s) where your graphic files are
-%\graphicspath{{./Figures/Pdf/}{}}
-  % and their extensions so you won't have to specify these with
-  % every instance of \includegraphics
-%\DeclareGraphicsExtensions{.pdf,.jpeg,.png}
-
-
-**Be sure to comment or remove these lines from main latex file, otherwise it might create issues.**
-```
 
 ## Issues
 
