@@ -40,6 +40,12 @@ class LatexMerger:
         except Exception as e:
             print(e)
 
+    def remove_single_file(self, file_name):
+        try:
+            os.remove(file_name)
+        except Exception as e:
+            print(e)
+
     def copy_file(self, source, destination):
         try:
             shutil.copy(src=source, dst=destination)
@@ -156,6 +162,16 @@ class LatexMerger:
             i=i+1
         self.write_into_file(file_name=main_file, lines=main_file_lines)
 
+    def remove_graphics_path_tage(self, main_tex_file):
+        lines = self.read_file(file_name=main_tex_file)
+        for i in range(0, len(lines)):
+            if '\\graphicspath{' in lines[i]:
+                lines[i] = '\n'
+            elif '\\DeclareGraphicsExtensions{' in lines[i]:
+                lines[i] = '\n'
+        self.write_into_file(main_tex_file, lines)
+        return
+
     def start_merge(self, overleaf_folder=None,
                     remove_old_project_flag=False,
                     style_files=None,
@@ -239,10 +255,17 @@ class LatexMerger:
             bib_content = self.read_file(file_name=os.path.join(overleaf_folder, bib_tex_file))
             self.update_bibliography_line(os.path.join('.', 'compiled-project', main_tex_file), bib_tex=bib_content)
 
+        # remove graphicpath
+        self.remove_graphics_path_tage(main_tex_file=os.path.join('.', 'compiled-project', main_tex_file))
 
         # main latex
         self.copy_file(source=os.path.join('.', 'compiled-project', main_tex_file),
                        destination=os.path.join('.', 'compiled-project', 'merge', main_tex_file))
+
+        # remove chapters
+        for i in range(0, len(chapters)):
+            self.remove_single_file(file_name=chapters[i])
+            
         return
 
     def remove_old_project(self):
