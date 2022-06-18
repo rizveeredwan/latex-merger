@@ -130,11 +130,13 @@ class LatexMerger:
         return lines
 
     def update_bibliography_line(self, main_tex_file, bib_tex):
+        """
+            elif bibliographystyle{ in lines[i]:
+                # lines[i] = '\n'
+        """
         lines = self.read_file(file_name=main_tex_file)
         for i in range(len(lines)-1, -1, -1):
             if '\\bibliography{' in lines[i]:
-                lines[i] = '\n'
-            elif '\\bibliographystyle{' in lines[i]:
                 lines[i] = '\n'
             elif '\\end{document}' in lines[i]:
                 lines[i] = "\n"
@@ -265,7 +267,7 @@ class LatexMerger:
         # remove chapters
         for i in range(0, len(chapters)):
             self.remove_single_file(file_name=chapters[i])
-            
+
         return
 
     def remove_old_project(self):
