@@ -95,6 +95,15 @@ class LatexMerger:
                 f.write(lines[i])
             f.close()
 
+    def comment_portion_removal(self, line):
+        for i in range(0, len(line)):
+            if line[i] == '%':
+                if i == 0:
+                    return ""
+                elif line[i-1] != "\\":
+                    return line[0:i]
+        return line
+
     def change_the_image_paths(self, file_name=None):
         found_image_maps = []
         try:
@@ -102,6 +111,7 @@ class LatexMerger:
             with open(file_name, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
                 for i in range(0, len(lines)):
+                    lines[i] = self.comment_portion_removal(line=lines[i])
                     if '\\includegraphics' in lines[i] and '.pdf' in lines[i]:
                         # print(lines[i])
                         temp = lines[i].split('}')[0]
@@ -125,8 +135,11 @@ class LatexMerger:
         return found_image_maps
 
     def read_file(self, file_name):
+        lines2 = []
         with open(file_name, 'r', encoding='utf-8') as f:
             lines = f.readlines()
+            for i in range(0, len(lines)):
+                lines[i] = self.comment_portion_removal(line=lines[i])
         return lines
 
     def update_bibliography_line(self, main_tex_file, bib_tex):
@@ -267,7 +280,6 @@ class LatexMerger:
         # remove chapters
         for i in range(0, len(chapters)):
             self.remove_single_file(file_name=chapters[i])
-
         return
 
     def remove_old_project(self):
