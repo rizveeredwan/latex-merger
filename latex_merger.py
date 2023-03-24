@@ -135,7 +135,6 @@ class LatexMerger:
         return found_image_maps
 
     def read_file(self, file_name):
-        lines2 = []
         with open(file_name, 'r', encoding='utf-8') as f:
             lines = f.readlines()
             for i in range(0, len(lines)):
@@ -160,11 +159,13 @@ class LatexMerger:
 
     def compile_section_text(self, main_file, sections):
         main_file_lines = self.read_file(file_name=main_file)
+        used_section_files = []
         i = 0
         while i < len(main_file_lines):
             if ('\\input{' in main_file_lines[i]) or ('\\include{' in main_file_lines[i]):
                 temp = self.extract_text_within_bracket(text=main_file_lines[i])
                 temp = self.extract_file_name(text=temp)
+                used_section_files.append(temp)
                 f_path = os.path.join('.', 'compiled-project', temp+'.tex')
                 print("f_paths ", f_path)
                 if os.path.exists(f_path) is True:
@@ -176,6 +177,7 @@ class LatexMerger:
                     print(f_path)
             i=i+1
         self.write_into_file(file_name=main_file, lines=main_file_lines)
+        return used_section_files
 
     def remove_graphics_path_tage(self, main_tex_file):
         lines = self.read_file(file_name=main_tex_file)
@@ -243,6 +245,7 @@ class LatexMerger:
         # copy the sections/chapters
         files = os.listdir(os.path.join(overleaf_folder, section_folder_name))
         chapters = []
+        chapter_names = {}
         for f in files:
             source = os.path.join(overleaf_folder, section_folder_name, f)
             destination = os.path.join('.', 'compiled-project', f)
@@ -252,18 +255,33 @@ class LatexMerger:
         # change the image path in files
         found_image_maps = []
         for f in range(0, len(chapters)):
-            found_image_maps = found_image_maps + self.change_the_image_paths(file_name=chapters[f])
+            path = os.path.normpath(path=chapters[f])
+            path = path.split(os.sep)
+            print("path ", path)
+            try:
+                chapter_names[path[-1].split('.tex')[0]] = self.change_the_image_paths(file_name=chapters[f])
+                found_image_maps = found_image_maps + chapter_names[path[-1].split('.tex')[0]]
+            except Exception as e:
+                print(e)
 
+        print("chapter names ", chapter_names)
         # compile section files
-        self.compile_section_text(main_file=os.path.join('.', 'compiled-project', main_tex_file), sections=chapters)
+        used_section_files = self.compile_section_text(main_file=os.path.join('.', 'compiled-project', main_tex_file), sections=chapters)
 
         ## all copying
         # image copying
         image_files = os.listdir(os.path.join('.', 'compiled-project', 'eps'))
         for im in image_files:
-            if os.path.join('compiled-project', im) in found_image_maps:
-                self.copy_file(source=os.path.join('.', 'compiled-project', 'eps', im),
-                               destination=os.path.join('.', 'compiled-project', 'merge'))
+            if os.path.join('compiled-project', im) in found_image_maps: # found_image_maps
+                for f in range(0, len(used_section_files)):
+                    try:
+                        if os.path.join('compiled-project', im) in chapter_names[used_section_files[f]]:
+                            self.copy_file(source=os.path.join('.', 'compiled-project', 'eps', im),
+                                           destination=os.path.join('.', 'compiled-project', 'merge'))
+                            break
+                    except Exception as e:
+                        print(e)
+
 
         if bib_tex_file is not None:
             # merging bibtex file
