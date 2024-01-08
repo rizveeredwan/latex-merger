@@ -79,5 +79,5 @@ def write_into_file(name, lines):
             f.write(lines[i])
 
 
-lines = blue_segment_remover(file_name=os.path.join('.', 'compiled-project', 'merge', 'main_expertsys - With Color.tex'))
-write_into_file(lines=lines, name='test_compilation.tex')
+lines = blue_segment_remover(file_name=os.path.join('.', 'main_eswa_with_color.tex'))
+write_into_file(lines=lines, name='main_clean.tex')

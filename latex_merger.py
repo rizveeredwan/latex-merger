@@ -32,6 +32,34 @@ class LatexMerger:
         else:
             pass
 
+    def simple_image_copy(self, image_folder):
+        self.remove_files(folder_name=os.path.join('compiled-project', 'eps'))
+        try:
+            os.mkdir(os.path.join('compiled-project', 'eps'))
+            print("directory created")
+        except Exception as e:
+            print(e)
+        # all pdf images to eps images
+        if os.path.exists(image_folder):
+            image_type = None
+            try:
+                files = os.listdir(image_folder)
+                for f in files:
+                    temp = os.path.join(image_folder, f)
+                    try:
+                        input_file = temp
+                        image_type = input_file.split('.')[1]
+                        output_file = os.path.join('compiled-project', 'eps', f)
+                        self.copy_file(source=input_file, destination=output_file)
+                    except Exception as e:
+                        pass
+                    print(output_file)
+            except Exception as e:
+                print(e)
+            return image_type
+        else:
+            return None
+
     def remove_files(self, folder_name='datasets'):
         try:
             if os.path.exists(folder_name):
@@ -104,7 +132,7 @@ class LatexMerger:
                     return line[0:i]
         return line
 
-    def change_the_image_paths(self, file_name=None):
+    def change_the_image_paths(self, file_name=None, old_ext=".pdf", new_ext="eps"):
         found_image_maps = []
         try:
             print(file_name)
@@ -112,17 +140,17 @@ class LatexMerger:
                 lines = f.readlines()
                 for i in range(0, len(lines)):
                     lines[i] = self.comment_portion_removal(line=lines[i])
-                    if '\\includegraphics' in lines[i] and '.pdf' in lines[i]:
+                    if '\\includegraphics' in lines[i] and old_ext in lines[i]:
                         # print(lines[i])
                         temp = lines[i].split('}')[0]
                         # print(temp)
                         pdf_name = self.extract_file_name(temp)
-                        eps_name = pdf_name.split('.pdf')[0] + '.eps'
+                        eps_name = pdf_name.split(old_ext)[0] + "." + new_ext
                         if os.path.exists(os.path.join('compiled-project', 'eps', eps_name)) is True:
                             found_image_maps.append(os.path.join('compiled-project', eps_name))
                             print("exists")
                             print(pdf_name, os.path.join('compiled-project', 'eps', eps_name))
-                            new_path = self.update_with_new_path(old_path=lines[i], new_path=eps_name.split('.eps')[0])
+                            new_path = self.update_with_new_path(old_path=lines[i], new_path=eps_name)
                             print(lines[i], new_path)
                             lines[i] = new_path
                         else:
@@ -215,11 +243,14 @@ class LatexMerger:
         # construct eps images
         if construct_eps_images is True and image_folder is not None:
             self.pdf_to_eps(pdf_folder=os.path.join(overleaf_folder, image_folder))
+        if construct_eps_images is False and image_folder is not None:
+            pass
 
         # copy style
         for st in style_files:
             source = os.path.join(overleaf_folder, st)
-            destination = os.path.join('.', 'compiled-project', 'merge', st)
+            f_name = os.path.normpath(st).split(os.path.sep)[-1] # file name extracting
+            destination = os.path.join('.', 'compiled-project', 'merge', f_name)
             self.copy_file(source, destination)
 
         # copy main tex file
@@ -230,7 +261,8 @@ class LatexMerger:
         # copy the bibiliography
         if bibliography_style is not None and bibliography_file is not None:
             source = os.path.join(overleaf_folder, bibliography_style)
-            destination = os.path.join('.', 'compiled-project', 'merge', bibliography_style)
+            f_name = os.path.normpath(bibliography_style).split(os.path.sep)[-1]
+            destination = os.path.join('.', 'compiled-project', 'merge', f_name)
             self.copy_file(source, destination)
             source = os.path.join(overleaf_folder, bibliography_file)
             destination = os.path.join('.', 'compiled-project', 'merge', bibliography_file)
