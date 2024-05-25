@@ -1,13 +1,16 @@
 import os
 import shutil
 from subprocess import call
+from PIL import Image
+import cairosvg # need to install GTK also (for windows) and (https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases)
+# and install cairo
 
 
 class LatexMerger:
     def __init__(self):
         pass
 
-    def pdf_to_eps(self, pdf_folder):
+    def convert_to_eps(self, pdf_folder):
         self.remove_files(folder_name=os.path.join('compiled-project', 'eps'))
         try:
             os.mkdir(os.path.join('compiled-project', 'eps'))
@@ -21,12 +24,39 @@ class LatexMerger:
                 for f in files:
                     temp = os.path.join(pdf_folder, f)
                     print(temp)
-                    try:
-                        input_file = temp
-                        output_file = os.path.join('compiled-project', 'eps', f.split('.pdf')[0] + '.eps')
-                        call(["pdf2ps", input_file, output_file])
-                    except Exception as e:
-                        print(e)
+                    input_file = temp
+                    if temp.lower().endswith('.pdf'):
+                        try:
+                            output_file = os.path.join('compiled-project', 'eps', f.split('.pdf')[0] + '.eps')
+                            call(["pdf2ps", input_file, output_file])
+                            # print(f"Successfully converted {input_file} to {output_file}")
+                        except Exception as e:
+                            print(e)
+                    if temp.lower().endswith('.svg'):
+                        output_file = os.path.join('compiled-project', 'eps', f.split('.svg')[0] + '.eps')
+                        cairosvg.svg2eps(url=input_file, write_to=output_file)
+                        #print(f"Successfully converted {input_file} to {output_file}")
+                    if temp.lower().endswith('.jpg') or temp.lower().endswith('.png') or temp.lower().endswith('.jpeg'):
+                        _, ext = os.path.splitext(input_file)
+                        output_file = os.path.join('compiled-project', 'eps', f.split(ext)[0] + '.eps')
+                        try:
+                            with Image.open(input_file) as img:
+                                print(f"Original image mode: {img.mode}")
+                                # Convert image to RGB if it's not already
+                                if img.mode == 'RGBA':
+                                    img = img.convert('RGB')
+                                    print(f"Converted image mode to RGB: {img.mode}")
+                                if img.mode not in ('RGB', 'RGBA', 'P'):
+                                    img = img.convert('RGB')
+                                    print(f"Converted image mode to RGB: {img.mode}")
+                                elif img.mode == 'P':  # Handle palette-based images
+                                    img = img.convert('RGB')
+                                    print(f"Converted palette image mode to RGB: {img.mode}")
+                                img.save(output_file, format='EPS')
+                                # print(f"Successfully converted {input_file} to {output_file}")
+                        except Exception as e:
+                            print("Issue in image conversion ", e)
+                            print("Failed to convert")
             except Exception as e:
                 print(e)
         else:
@@ -39,7 +69,7 @@ class LatexMerger:
             print("directory created")
         except Exception as e:
             print(e)
-        # all pdf images to eps images
+        # all images to eps images
         if os.path.exists(image_folder):
             image_type = None
             try:
@@ -51,9 +81,9 @@ class LatexMerger:
                         image_type = input_file.split('.')[1]
                         output_file = os.path.join('compiled-project', 'eps', f)
                         self.copy_file(source=input_file, destination=output_file)
+                        print(output_file)
                     except Exception as e:
                         pass
-                    print(output_file)
             except Exception as e:
                 print(e)
             return image_type
@@ -132,30 +162,39 @@ class LatexMerger:
                     return line[0:i]
         return line
 
-    def change_the_image_paths(self, file_name=None, old_ext=".pdf", new_ext="eps"):
+    def change_the_image_paths(self, file_name=None):
         found_image_maps = []
         try:
             print(file_name)
             with open(file_name, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
+                exts = ['.pdf', '.jpg', '.png', '.jpeg', '.svg']
+                new_ext = 'eps'
                 for i in range(0, len(lines)):
                     lines[i] = self.comment_portion_removal(line=lines[i])
-                    if '\\includegraphics' in lines[i] and old_ext in lines[i]:
-                        # print(lines[i])
-                        temp = lines[i].split('}')[0]
-                        # print(temp)
-                        pdf_name = self.extract_file_name(temp)
-                        eps_name = pdf_name.split(old_ext)[0] + "." + new_ext
-                        if os.path.exists(os.path.join('compiled-project', 'eps', eps_name)) is True:
-                            found_image_maps.append(os.path.join('compiled-project', eps_name))
-                            print("exists")
-                            print(pdf_name, os.path.join('compiled-project', 'eps', eps_name))
-                            new_path = self.update_with_new_path(old_path=lines[i], new_path=eps_name)
-                            print(lines[i], new_path)
-                            lines[i] = new_path
-                        else:
-                            print("do not exist")
-                            print(pdf_name, os.path.join('compiled-project', 'eps', eps_name))
+                    for e in exts:
+                        old_ext = e
+                        # choices = ['\\includegraphics', '\\includesvg']
+                        if '\\includesvg' in lines[i]:
+                            print("FOUND HERE ", lines[i])
+                            lines[i] = lines[i].replace('\\includesvg', '\\includegraphics')
+                            #print(f"lines[i] {lines[i]}")
+                        if '\\includegraphics' in lines[i] and old_ext in lines[i]:
+                            #print(lines[i])
+                            temp = lines[i].split('}')[0]
+                            #print(temp)
+                            pdf_name = self.extract_file_name(temp)
+                            eps_name = pdf_name.split(old_ext)[0] + "." + new_ext
+                            if os.path.exists(os.path.join('compiled-project', 'eps', eps_name)) is True:
+                                found_image_maps.append(os.path.join('compiled-project', eps_name))
+                                print("exists")
+                                print(pdf_name, os.path.join('compiled-project', 'eps', eps_name))
+                                new_path = self.update_with_new_path(old_path=lines[i], new_path=eps_name)
+                                print(lines[i], new_path)
+                                lines[i] = new_path
+                            else:
+                                print("do not exist")
+                                print(pdf_name, os.path.join('compiled-project', 'eps', eps_name))
                 self.write_into_file(file_name=file_name, lines=lines)
                 print("writing complete")
         except Exception as e:
@@ -242,9 +281,7 @@ class LatexMerger:
 
         # construct eps images
         if construct_eps_images is True and image_folder is not None:
-            self.pdf_to_eps(pdf_folder=os.path.join(overleaf_folder, image_folder))
-        if construct_eps_images is False and image_folder is not None:
-            pass
+            self.convert_to_eps(pdf_folder=os.path.join(overleaf_folder, image_folder))
 
         # copy style
         for st in style_files:
@@ -299,6 +336,8 @@ class LatexMerger:
         print("chapter names ", chapter_names)
         # compile section files
         used_section_files = self.compile_section_text(main_file=os.path.join('.', 'compiled-project', main_tex_file), sections=chapters)
+        print(used_section_files)
+        print(chapter_names)
 
         ## all copying
         # image copying
@@ -322,6 +361,7 @@ class LatexMerger:
 
         # remove graphicpath
         self.remove_graphics_path_tage(main_tex_file=os.path.join('.', 'compiled-project', main_tex_file))
+
 
         # main latex
         self.copy_file(source=os.path.join('.', 'compiled-project', main_tex_file),
